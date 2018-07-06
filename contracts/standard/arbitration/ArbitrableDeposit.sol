@@ -29,6 +29,8 @@ contract ArbitrableDeposit is Arbitrable {
     uint internal claimResponseAmount; // Amount which the Owner responds to the claimant's asking claim.
     uint public claimDepositAmount; // Total amount a claimant must deposit. 
 
+    uint internal constant PERCENT_DIVISOR = 100;
+
     enum Status {NoDispute, WaitingOwner, WaitingClaimant, DisputeCreated, Resolved}
     Status public status;
     
@@ -74,10 +76,11 @@ contract ArbitrableDeposit is Arbitrable {
      *  @param _claimAmount The proposed claim amount by the claimant.
      */    
     function makeClaim(uint _claimAmount) onlyNotOwner {
-        require(_claimAmount >= 0 && _claimAmount <= amount);
+        require(_claimAmount <= amount);
+
         claimant = msg.sender;
         claimAmount = _claimAmount;
-        claimDepositAmount = (_claimAmount * claimRate)/100;
+        claimDepositAmount = (_claimAmount * claimRate)/PERCENT_DIVISOR;
         address(this).transfer(claimDepositAmount);
         status = Status.WaitingOwner;
     }
@@ -87,7 +90,7 @@ contract ArbitrableDeposit is Arbitrable {
      *  @param _responseAmount The counter-offer amount the Owner proposes to a claimant.
      */ 
     function claimResponse(uint _responseAmount) onlyOwner { 
-        require(_responseAmount >= 0 && _responseAmount <= claimDepositAmount);
+        require(_responseAmount <= claimDepositAmount);
         claimResponseAmount = _responseAmount;
         if (_responseAmount == claimDepositAmount) {
             claimant.transfer(_responseAmount);
